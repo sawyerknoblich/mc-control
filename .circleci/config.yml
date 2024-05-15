@@ -19,6 +19,8 @@ jobs:
       - run:
           name: Extract Version
           command: |
+            ls
+            cat Cargo.toml
             VERSION=$(yq -oy '.package.version' Cargo.toml)
             echo "export MC_CONTROL_VERSION='${VERSION}'" >> $BASH_ENV
 
