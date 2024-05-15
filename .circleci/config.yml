@@ -19,10 +19,6 @@ jobs:
       - run:
           name: Extract Version
           command: |
-            ls
-            cat Cargo.toml
-            yq --version
-            rg --version
             VERSION=$(cat Cargo.toml | grep -E '^version' | sed -nr 's/^version[[:space:]]*=[[:space:]]*"(.*)"/\1/p')
             echo "version is ${VERSION}"
             echo "export MC_CONTROL_VERSION='${VERSION}'" >> $BASH_ENV
