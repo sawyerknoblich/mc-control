@@ -23,7 +23,8 @@ jobs:
             cat Cargo.toml
             yq --version
             rg --version
-            VERSION=$(yq -oy '.package.version' Cargo.toml)
+            VERSION=$(cat Cargo.toml | grep -E '^version' | sed -nr 's/^version[[:space:]]*=[[:space:]]*"(.*)"/\1/p')
+            echo "version is ${VERSION}"
             echo "export MC_CONTROL_VERSION='${VERSION}'" >> $BASH_ENV
 
       # Build and push when on main
