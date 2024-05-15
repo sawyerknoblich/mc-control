@@ -21,6 +21,7 @@ jobs:
           command: |
             ls
             cat Cargo.toml
+            yq --version
             VERSION=$(yq -oy '.package.version' Cargo.toml)
             echo "export MC_CONTROL_VERSION='${VERSION}'" >> $BASH_ENV
 
