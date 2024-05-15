@@ -15,7 +15,24 @@ COPY . .
 # Build our project
 RUN cargo build --release --bin mc-control
 
-FROM alpine:3.19.1 as runtime
-RUN apk add kubectl
+FROM debian:bookworm-slim AS runtime
+WORKDIR /app
+RUN apt-get update -y \
+    && apt-get install -y --no-install-recommends openssl ca-certificates \
+    # Clean up
+    && apt-get autoremove -y \
+    && apt-get clean -y \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update -y && \
+    apt-get install -y apt-transport-https ca-certificates curl gnupg2
+RUN curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | \
+    gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+RUN chmod 644 /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+RUN echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /' >/etc/apt/sources.list.d/kubernetes.list
+RUN chmod 644 /etc/apt/sources.list.d/kubernetes.list
+RUN apt-get update && \
+    apt-get install -y kubectl
+
 COPY --from=builder /app/target/release/mc-control mc-control
 ENTRYPOINT ["./mc-control"]
