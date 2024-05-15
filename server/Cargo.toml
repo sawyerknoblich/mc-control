@@ -1,0 +1,13 @@
+[package]
+name = "mc-control"
+version = "1.0.0"
+edition = "2021"
+
+[dependencies]
+axum = "0.7.5"
+color-eyre = "0.6.3"
+serde = { version = "1.0.202", features = ["derive"] }
+tokio = { version = "1.37.0", features = ["full"] }
+tower-http = { version = "0.5.2", features = ["fs", "timeout", "trace"] }
+tracing = "0.1.40"
+tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }

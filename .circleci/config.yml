@@ -1,0 +1,100 @@
+version: 2.1
+
+orbs:
+  aws-cli: circleci/aws-cli@4.1.3
+  aws-ecr: circleci/aws-ecr@9.1.0
+
+jobs:
+  build-application:
+    docker:
+      - image: 510648156659.dkr.ecr.us-east-1.amazonaws.com/node-with-rust-wasm:latest
+        aws_auth:
+          oidc_role_arn: arn:aws:iam::510648156659:role/circleci-oidc
+
+    resource_class: "medium"
+
+    steps:
+      - checkout
+
+      - run:
+          name: Check Server Formatting
+          working_directory: "server"
+          command: "cargo fmt --check"
+
+      - run:
+          name: Run Clippy
+          working_directory: "server"
+          command: "cargo clippy"
+      
+      - run:
+          name: NPM Install
+          working_directory: "ui"
+          command: "npm ci"
+
+      - run:
+          name: Check UI Formatting
+          working_directory: "ui"
+          command: "npm run format:check"
+
+      - run:
+          name: Build UI
+          working_directory: "ui"
+          command: "npm run build"
+      
+      - run:
+          name: Extract Version
+          command: |
+            VERSION=$(cat server/Cargo.toml | grep -E '^version' | sed -nr 's/^version[[:space:]]*=[[:space:]]*"(.*)"/\1/p')
+            echo "export MC_CONTROL_VERSION='${VERSION}'" >> $BASH_ENV
+
+      # Build and push when on main
+      - when:
+          condition:
+              equal: [ main, << pipeline.git.branch >> ]
+          steps:
+            - aws-ecr/build_and_push_image:
+                account_id: "510648156659"
+                auth:
+                  - aws-cli/setup:
+                      role_arn: arn:aws:iam::510648156659:role/circleci-oidc
+                build_path: "."
+                checkout: false
+                create_repo: false
+                path: "."
+                platform: linux/amd64
+                push_image: true
+                region: us-east-1
+                remote_docker_layer_caching: true
+                repo: mc-control
+                setup_remote_docker: true
+                skip_when_tags_exist: false
+                tag: latest,${MC_CONTROL_VERSION}
+        
+            - run:
+                name: "Deploy"
+                command: |
+                  mkdir -p ~/.ssh
+                  echo 'github.com ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCj7ndNxQowgcQnjshcLrqPEiiphnt+VTTvDP6mHBL9j1aNUkY4Ue1gvwnGLVlOhGeYrnZaMgRK6+PKCUXaDbC7qtbW8gIkhL7aGCsOr/C56SJMy/BCZfxd1nWzAOxSDPgVsmerOBYfNqltV9/hWCqBywINIR+5dIg6JTJ72pcEpEjcYgXkE2YEFXV1JHnsKgbLWNlhScqb2UmyRkQyytRLtL+38TGxkxCflmO+5Z8CSSNY7GidjMIZ7Q4zMjA2n1nGrlTDkzwDCsw+wqFPGQA179cnfGWOWRVruj16z6XyvxvjJwbz0wQZ75XK5tKSb7FNyeIEs4TT4jk+S4dhPeAUC5y+bDYirYgM4GC7uEnztnZyaVWQ7B381AK4Qdrwt51ZqExKbQpTUNn+EjqoTwvqNj4kqx5QUCI0ThS/YkOxJCXmPUWZbhjpCg56i+2aB6CmK2JGhn57K5mj0MNdBXA4/WnwH6XoPWJzK5Nyu2zB3nAZp+S5hpQs+p1vN1/wsjk=' >> ~/.ssh/known_hosts
+
+                  git clone git@github.com:sawyerknoblich/argocd-apps
+                  cd argocd-apps/mc-control
+
+                  yq -i "select(.kind == \"Deployment\").spec.template.spec.containers[0].image = \"510648156659.dkr.ecr.us-east-1.amazonaws.com/mc-control:${MC_CONTROL_VERSION}\"" mc-control.yaml
+
+                  git config user.name "Automation"
+                  git config user.email "me@sawyerknoblich.com"
+
+                  git commit -am "mc-control v${MC_CONTROL_VERSION}"
+
+                  git push origin HEAD
+
+
+workflows:
+  on_push:
+    jobs:
+      - build-application
+  
+  manual:
+    when: { equal: [ api, << pipeline.trigger_source >> ] }
+    jobs:
+      - build-application
