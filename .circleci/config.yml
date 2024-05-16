@@ -52,10 +52,10 @@ jobs:
           auth:
             - aws-cli/setup:
                 role_arn: arn:aws:iam::510648156659:role/circleci-oidc
-          build_path: server
+          build_path: "."
           checkout: false
           create_repo: false
-          path: server
+          path: "."
           platform: linux/amd64
           push_image: true
           region: us-east-1
