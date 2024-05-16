@@ -14,9 +14,7 @@ import {
 function App() {
   const theme = useTheme();
   const [password, setPassword] = useState<string | null>(null);
-  const [passwordHint, setPasswordHint] = useState<string | null>(
-    "Pound of ____, extra ____",
-  );
+  const [passwordHint, setPasswordHint] = useState<string | null>(null);
   const [restarting, setRestarting] = useState<boolean>(false);
 
   const [alertOpen, setAlertOpen] = useState<boolean>(false);
@@ -94,7 +92,7 @@ function App() {
             {restarting && <CircularProgress variant="indeterminate" />}
           </Stack>
           <Typography variant="subtitle2" color={theme.palette.text.disabled}>
-            Hint: {passwordHint}
+            Hint: {passwordHint ?? "..."}
           </Typography>
         </Stack>
       </Stack>
