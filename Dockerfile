@@ -3,17 +3,23 @@ WORKDIR /app
 RUN apt update && apt install lld clang -y
 
 FROM chef as planner
-COPY . .
+COPY /server .
 # Compute a lock-like file for our project
 RUN cargo chef prepare  --recipe-path recipe.json
 
-FROM chef as builder
+FROM chef as server_builder
 COPY --from=planner /app/recipe.json recipe.json
 # Build our project dependencies, not our application!
 RUN cargo chef cook --release --recipe-path recipe.json
-COPY . .
+COPY /server .
 # Build our project
 RUN cargo build --release --bin mc-control
+
+FROM node:22.1.0-alpine3.18 as ui_builder
+WORKDIR /app
+COPY /ui .
+RUN npm ci
+RUN npm run build
 
 FROM debian:bookworm-slim AS runtime
 WORKDIR /app
@@ -34,5 +40,6 @@ RUN chmod 644 /etc/apt/sources.list.d/kubernetes.list
 RUN apt-get update && \
     apt-get install -y kubectl
 
-COPY --from=builder /app/target/release/mc-control mc-control
+COPY --from=server_builder /app/target/release/mc-control mc-control
+COPY --from=ui_builder /app/dist/ assets/
 ENTRYPOINT ["./mc-control"]

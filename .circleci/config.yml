@@ -15,11 +15,36 @@ jobs:
 
     steps:
       - checkout
+
+      - run:
+          name: Check Server Formatting
+          working-directory: "server"
+          command: "cargo fmt --check"
+
+      - run:
+          name: Run Clippy
+          working-directory: "server"
+          command: "cargo clippy"
+      
+      - run:
+          name: NPM Install
+          working-directory: "ui"
+          command: "npm ci"
+
+      - run:
+          name: Check UI Formatting
+          working-directory: "ui"
+          command: "npm run format:check"
+
+      - run:
+          name: Build UI
+          working-directory: "ui"
+          command: "npm run build"
       
       - run:
           name: Extract Version
           command: |
-            VERSION=$(cat Cargo.toml | grep -E '^version' | sed -nr 's/^version[[:space:]]*=[[:space:]]*"(.*)"/\1/p')
+            VERSION=$(cat server/Cargo.toml | grep -E '^version' | sed -nr 's/^version[[:space:]]*=[[:space:]]*"(.*)"/\1/p')
             echo "export MC_CONTROL_VERSION='${VERSION}'" >> $BASH_ENV
             
       - aws-ecr/build_and_push_image:
@@ -27,10 +52,10 @@ jobs:
           auth:
             - aws-cli/setup:
                 role_arn: arn:aws:iam::510648156659:role/circleci-oidc
-          build_path: '.'
+          build_path: server
           checkout: false
           create_repo: false
-          path: '.'
+          path: server
           platform: linux/amd64
           push_image: true
           region: us-east-1
