@@ -41,5 +41,5 @@ RUN apt-get update && \
     apt-get install -y kubectl
 
 COPY --from=server_builder /app/target/release/mc-control mc-control
-COPY --from=ui_builder /app/dist/ assets/
+COPY --from=ui_builder /app/dist/ ui/
 ENTRYPOINT ["./mc-control"]
