@@ -18,27 +18,27 @@ jobs:
 
       - run:
           name: Check Server Formatting
-          working-directory: "server"
-          command: "cargo fmt --check --manifest-path ./Cargo.toml"
+          working_directory: "server"
+          command: "cargo fmt --check"
 
       - run:
           name: Run Clippy
-          working-directory: "server"
-          command: "cargo clippy --manifest-path ./Cargo.toml"
+          working_directory: "server"
+          command: "cargo clippy"
       
       - run:
           name: NPM Install
-          working-directory: "ui"
+          working_directory: "ui"
           command: "npm ci"
 
       - run:
           name: Check UI Formatting
-          working-directory: "ui"
+          working_directory: "ui"
           command: "npm run format:check"
 
       - run:
           name: Build UI
-          working-directory: "ui"
+          working_directory: "ui"
           command: "npm run build"
       
       - run:
