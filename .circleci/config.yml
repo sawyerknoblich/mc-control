@@ -19,12 +19,12 @@ jobs:
       - run:
           name: Check Server Formatting
           working-directory: "server"
-          command: "cargo fmt --check"
+          command: "cargo fmt --check --manifest-path ./Cargo.toml"
 
       - run:
           name: Run Clippy
           working-directory: "server"
-          command: "cargo clippy"
+          command: "cargo clippy --manifest-path ./Cargo.toml"
       
       - run:
           name: NPM Install
