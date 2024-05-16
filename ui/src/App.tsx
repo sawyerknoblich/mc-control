@@ -91,9 +91,11 @@ function App() {
 
             {restarting && <CircularProgress variant="indeterminate" />}
           </Stack>
-          <Typography variant="subtitle2" color={theme.palette.text.disabled}>
-            Hint: {passwordHint ?? "..."}
-          </Typography>
+          {passwordHint !== null && (
+            <Typography variant="subtitle2" color={theme.palette.text.disabled}>
+              Hint: {passwordHint}
+            </Typography>
+          )}
         </Stack>
       </Stack>
 
