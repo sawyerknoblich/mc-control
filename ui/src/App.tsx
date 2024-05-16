@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Alert,
   Button,
@@ -14,14 +14,29 @@ import {
 function App() {
   const theme = useTheme();
   const [password, setPassword] = useState<string | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [passwordHint, setPasswordHint] = useState<string | null>(
+    "Pound of ____, extra ____",
+  );
+  const [restarting, setRestarting] = useState<boolean>(false);
 
   const [alertOpen, setAlertOpen] = useState<boolean>(false);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
   const [alertIsError, setAlertIsError] = useState<boolean>(false);
 
+  useEffect(() => {
+    const run = async () => {
+      const response = await fetch("/minecraft/api/password_hint");
+      if (response.status === 200) {
+        const text = await response.text();
+        setPasswordHint(JSON.parse(text));
+      }
+    };
+
+    run();
+  }, []);
+
   const sendRestartRequest = async () => {
-    setLoading(true);
+    setRestarting(true);
 
     const response = await fetch("/minecraft/api/restart", {
       method: "POST",
@@ -31,7 +46,7 @@ function App() {
       body: JSON.stringify({ password }),
     });
 
-    setLoading(false);
+    setRestarting(false);
 
     if (response.status === 200) {
       setAlertIsError(false);
@@ -55,32 +70,36 @@ function App() {
       <Stack direction="column" spacing={2} padding={theme.spacing(2)}>
         <Typography variant="h4">Minecraft Control Panel</Typography>
 
-        <Stack direction="row" spacing={1} alignItems="center">
-          <TextField
-            type="password"
-            label="Password"
-            value={password}
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-              setPassword(event.target.value);
-            }}
-          />
-          <Button
-            variant="contained"
-            disabled={loading || password === null || password.trim() === ""}
-            onClick={() => sendRestartRequest()}
-          >
-            Restart
-          </Button>
+        <Stack direction="column" spacing={1}>
+          <Stack direction="row" spacing={1} alignItems="center">
+            <TextField
+              type="password"
+              label="Password"
+              value={password}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                setPassword(event.target.value);
+              }}
+            />
 
-          {loading && <CircularProgress variant="indeterminate" />}
+            <Button
+              variant="contained"
+              disabled={
+                restarting || password === null || password.trim() === ""
+              }
+              onClick={() => sendRestartRequest()}
+            >
+              Restart
+            </Button>
+
+            {restarting && <CircularProgress variant="indeterminate" />}
+          </Stack>
+          <Typography variant="subtitle2" color={theme.palette.text.disabled}>
+            Hint: {passwordHint}
+          </Typography>
         </Stack>
       </Stack>
 
-      <Snackbar
-        open={alertOpen}
-        autoHideDuration={600000000}
-        onClose={onAlertClose}
-      >
+      <Snackbar open={alertOpen} autoHideDuration={5000} onClose={onAlertClose}>
         <Alert
           onClose={onAlertClose}
           severity={alertIsError ? "error" : "success"}
