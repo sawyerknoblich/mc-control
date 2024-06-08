@@ -50,9 +50,13 @@ function App() {
       setAlertIsError(false);
       setAlertMessage("Server successfully restarted");
       setAlertOpen(true);
+    } else if (response.status === 401) {
+      setAlertIsError(true);
+      setAlertMessage("Incorrect password");
+      setAlertOpen(true);
     } else {
       setAlertIsError(true);
-      setAlertMessage("Error restarting server");
+      setAlertMessage("Unknown error restarting server");
       setAlertOpen(true);
     }
   };
